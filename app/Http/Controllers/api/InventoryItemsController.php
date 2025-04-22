@@ -54,7 +54,7 @@ class InventoryItemsController extends Controller
         try {
             $user = Auth::user();
             // $items = inv_items::where('company_id', $user->company_id)->where('branch_id', $user->user_branch)->get();
-            $items = inv_items::where('company_id', $user->company_id)->where('branch_id', $user->user_branch)->where('inv_unit_status', 1)->get();
+            $items = inv_items::with(['category:inv_item_cats_id,inv_item_cats_name', 'unit:inv_unit_id,inv_unit_name'])->where('company_id', $user->company_id)->where('branch_id', $user->user_branch)->where('inv_unit_status', 1)->get();
             return response()->json(['success' => true, 'message' => "Inventory item get successfully", 'data' => $items], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);

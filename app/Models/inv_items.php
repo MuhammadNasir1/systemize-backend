@@ -31,4 +31,16 @@ class inv_items extends Model
 
     public $timestamp  = true;
 
+    
+    public function category()
+    {
+        return $this->belongsTo(inv_item_cat::class, 'inv_item_cats_id');
+    }
+
+    public function unit()
+    {
+        return $this->belongsTo(inv_unit::class, 'inv_unit_id');
+    }
+
+
 }
