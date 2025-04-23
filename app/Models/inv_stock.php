@@ -24,4 +24,10 @@ class inv_stock extends Model
     ];
 
     public $timestamp = true;
+
+
+    public function item()
+    {
+        return $this->belongsTo(inv_items::class, 'inv_items_id');
+    }
 }

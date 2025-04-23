@@ -10,6 +10,19 @@ use Illuminate\Support\Facades\Auth;
 
 class InventoryStockController extends Controller
 {
+    public function getStock()
+    {
+        try {
+            $user = Auth::user();
+            // $stocks = inv_stock::where('branch_id', $user->user_branch)->get();
+            $stocks = inv_stock::with(['item:inv_items_id,inv_items_name'])->where('branch_id', $user->user_branch)->get();
+
+            return response()->json(['success' => true, 'message' => "Inventory stock get successfully", 'data' => $stocks], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
 
     public function createStock(Request $request)
     {
