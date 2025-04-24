@@ -116,9 +116,7 @@ class InventoryStockController extends Controller
                     $item->increment('inv_items_stock', $stock->inv_stock_qty);
                     break;
 
-                case 'stock_adjustment':
-                    // Handle stock adjustment reversal if needed
-                    break;
+
 
                 case 'stock_transfer':
                 default:
@@ -130,6 +128,91 @@ class InventoryStockController extends Controller
             $stock->update();
             return response()->json(['success' => true, 'message' => 'Stock deleted successfully'], 200);
         } catch (\Exception  $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+
+    public function updateStock(Request $request, $stock_id)
+    {
+        try {
+            $user = Auth::user();
+
+            $validated = $request->validate([
+                'inv_items_id' => 'required|integer',
+                'inv_stock_qty' => 'required|integer',
+                'inv_unit_purchase_price' => 'nullable',
+                'inv_stocks_type' => 'required|string',
+                'inv_unit_expiry' => 'nullable|date',
+                'inv_stocks_reason' => 'nullable|string'
+            ]);
+
+            $stock = inv_stock::find($stock_id);
+            if (!$stock) {
+                return response()->json(['success' => false, 'message' => 'Stock not found'], 404);
+            }
+
+            $item = inv_items::find($stock->inv_items_id);
+            if (!$item) {
+                return response()->json(['success' => false, 'message' => "Original Inventory Item not found"], 400);
+            }
+
+            // Reverse the original stock change
+            switch ($stock->inv_stocks_type) {
+                case 'stock_in':
+                    $item->decrement('inv_items_stock', $stock->inv_stock_qty);
+                    break;
+
+                case 'stock_out':
+                case 'stock_waste':
+                    $item->increment('inv_items_stock', $stock->inv_stock_qty);
+                    break;
+            }
+
+            // Apply new stock logic
+            $newItem = inv_items::find($validated['inv_items_id']);
+            if (!$newItem) {
+                return response()->json(['success' => false, 'message' => "Updated Inventory Item not found"], 400);
+            }
+
+            switch ($validated['inv_stocks_type']) {
+                case 'stock_in':
+                    $newItem->increment('inv_items_stock', $validated['inv_stock_qty']);
+                    break;
+
+                case 'stock_out':
+                case 'stock_waste':
+                    if ($newItem->inv_items_stock < $validated['inv_stock_qty']) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Stock out quantity exceeds available stock"
+                        ], 400);
+                    }
+                    $newItem->decrement('inv_items_stock', $validated['inv_stock_qty']);
+                    break;
+
+                case 'stock_adjustment':
+                    $newItem->update(['inv_items_stock' => $validated['inv_stock_qty']]);
+                    break;
+
+                case 'stock_transfer':
+                default:
+                    $newItem->decrement('inv_items_stock', $validated['inv_stock_qty']);
+                    break;
+            }
+
+            // Update the stock record
+            $stock->update([
+                'inv_items_id' => $validated['inv_items_id'],
+                'inv_stock_qty' => $validated['inv_stock_qty'],
+                'inv_unit_purchase_price' => $validated['inv_unit_purchase_price'] ?? 0,
+                'inv_unit_expiry' => $request->input('inv_unit_expiry'),
+                'inv_stocks_type' => $validated['inv_stocks_type'],
+                'inv_stocks_reason' => $request->input('inv_stocks_reason')
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Stock updated successfully', 'data' => $stock], 200);
+        } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }

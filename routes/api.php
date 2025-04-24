@@ -174,7 +174,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/addInventoryStock', 'createStock');
         Route::get('/getInventoryStock', 'getStock');
         Route::delete('/deleteInventoryStock/{stock_id}', 'deleteStock');
-        // Route::put('/updataInventoryItem/{item_id}', 'updataItem');
+        Route::put('/updateInventoryStock/{stock_id}', 'updateStock');
     });
 });
 
