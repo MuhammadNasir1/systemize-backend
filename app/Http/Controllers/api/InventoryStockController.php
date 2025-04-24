@@ -34,10 +34,8 @@ class InventoryStockController extends Controller
 
             $validated = $request->validate([
                 'inv_items_id' => 'required|integer',
-                'supplier_id' => 'required|integer',
                 'inv_stock_qty' => 'required|integer',
-                'inv_unit_purchase_price' => 'required|numeric',
-                'inv_unit_expiry' => 'required|date',
+                'inv_unit_purchase_price' => 'nullable',
                 'inv_stocks_type' => 'required|string'
             ]);
 
@@ -54,6 +52,7 @@ class InventoryStockController extends Controller
                     break;
 
                 case 'stock_out':
+                case 'stock_waste':
                     if ($item->inv_items_stock < $validated['inv_stock_qty']) {
                         return response()->json([
                             'success' => false,
@@ -77,11 +76,12 @@ class InventoryStockController extends Controller
                 'user_id' => $user->id,
                 'branch_id' => $user->user_branch,
                 'inv_items_id' => $validated['inv_items_id'],
-                'supplier_id' => $validated['supplier_id'],
+                'supplier_id' => $item->supplier_id,
                 'inv_stock_qty' => $validated['inv_stock_qty'],
-                'inv_unit_purchase_price' => $validated['inv_unit_purchase_price'],
-                'inv_unit_expiry' => $validated['inv_unit_expiry'],
-                'inv_stocks_type' => $validated['inv_stocks_type']
+                'inv_unit_purchase_price' => $validated['inv_unit_purchase_price'] ??  0,
+                'inv_unit_expiry' => $request['inv_unit_expiry'],
+                'inv_stocks_type' => $validated['inv_stocks_type'],
+                'inv_stocks_reason' => $request['inv_stocks_reason']
             ]);
             return response()->json(['success' => true, 'message' => 'Stock added successfully', 'data' => $stock], 201);
         } catch (\Exception $e) {

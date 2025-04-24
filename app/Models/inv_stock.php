@@ -21,6 +21,7 @@ class inv_stock extends Model
         "inv_unit_purchase_price",
         "inv_unit_expiry",
         "inv_stocks_type",
+        "inv_stocks_reason",
     ];
 
     public $timestamp = true;

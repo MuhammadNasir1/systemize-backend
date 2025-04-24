@@ -21,8 +21,9 @@ return new class extends Migration
             $table->integer("supplier_id");
             $table->integer("inv_stock_qty");
             $table->float("inv_unit_purchase_price");
-            $table->date("inv_unit_expiry");
+            $table->date("inv_unit_expiry")->nullable();
             $table->string("inv_stocks_type");
+            $table->text("inv_stocks_reason")->nullable();
             $table->timestamps();
         });
     }
