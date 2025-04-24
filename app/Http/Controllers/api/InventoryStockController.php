@@ -19,13 +19,12 @@ class InventoryStockController extends Controller
             $stocks = inv_stock::with([
                 'item:inv_items_id,inv_items_id,inv_items_name,inv_items_stock,inv_item_cats_id',
                 'item.category:inv_item_cats_id,inv_item_cats_name'
-            ])->where('branch_id', $user->user_branch)->get();
+            ])->where('branch_id', $user->user_branch)->where('inv_stocks_status', 1)->get();
             return response()->json(['success' => true, 'message' => "Inventory stock get successfully", 'data' => $stocks], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
         }
     }
-
 
     public function createStock(Request $request)
     {
@@ -85,6 +84,52 @@ class InventoryStockController extends Controller
             ]);
             return response()->json(['success' => true, 'message' => 'Stock added successfully', 'data' => $stock], 201);
         } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function  deleteStock($stock_id)
+    {
+
+
+        try {
+
+            $stock = inv_stock::find($stock_id);
+            if (!$stock) {
+                return response()->json(['success' => false, 'message' => 'Stock not found'], 404);
+            }
+
+            $item = inv_items::find($stock->inv_items_id);
+
+            if (!$item) {
+                return response()->json(['success' => false, 'message' => "Inventory Item not found"], 400);
+            }
+
+            // Reverse the stock transaction
+            switch ($stock->inv_stocks_type) {
+                case 'stock_in':
+                    $item->decrement('inv_items_stock', $stock->inv_stock_qty);
+                    break;
+
+                case 'stock_out':
+                case 'stock_waste':
+                    $item->increment('inv_items_stock', $stock->inv_stock_qty);
+                    break;
+
+                case 'stock_adjustment':
+                    // Handle stock adjustment reversal if needed
+                    break;
+
+                case 'stock_transfer':
+                default:
+                    $item->increment('inv_items_stock', $stock->inv_stock_qty);
+                    break;
+            }
+
+            $stock->inv_stocks_status = 0;
+            $stock->update();
+            return response()->json(['success' => true, 'message' => 'Stock deleted successfully'], 200);
+        } catch (\Exception  $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }

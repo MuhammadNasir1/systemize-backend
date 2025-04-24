@@ -24,6 +24,7 @@ return new class extends Migration
             $table->date("inv_unit_expiry")->nullable();
             $table->string("inv_stocks_type");
             $table->text("inv_stocks_reason")->nullable();
+            $table->integer("inv_stocks_status")->default(1);
             $table->timestamps();
         });
     }

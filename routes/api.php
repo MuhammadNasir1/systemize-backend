@@ -173,8 +173,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::controller(InventoryStockController::class)->group(function () {
         Route::post('/addInventoryStock', 'createStock');
         Route::get('/getInventoryStock', 'getStock');
+        Route::delete('/deleteInventoryStock/{stock_id}', 'deleteStock');
         // Route::put('/updataInventoryItem/{item_id}', 'updataItem');
-        // Route::delete('/deleteInventoryItem/{item_id}', 'deleteItem');
     });
 });
 
