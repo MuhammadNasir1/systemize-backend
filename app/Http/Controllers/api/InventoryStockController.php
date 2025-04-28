@@ -10,21 +10,67 @@ use Illuminate\Support\Facades\Auth;
 
 class InventoryStockController extends Controller
 {
-    public function getStock()
-    {
-        try {
-            $user = Auth::user();
-            // $stocks = inv_stock::with(['item:inv_items_id,inv_items_name,inv_items_stock,inv_items_stock', 'category'])->where('branch_id', $user->user_branch)->get();
+    // public functiongetStock()
+    // {
+        // try {
+        //     $user = Auth::user();
+        //     // $stocks = inv_stock::with(['item:inv_items_id,inv_items_name,inv_items_stock,inv_items_stock', 'category'])->where('branch_id', $user->user_branch)->get();
 
-            $stocks = inv_stock::with([
-                'item:inv_items_id,inv_items_id,inv_items_name,inv_items_stock,inv_item_cats_id',
-                'item.category:inv_item_cats_id,inv_item_cats_name'
-            ])->where('branch_id', $user->user_branch)->where('inv_stocks_status', 1)->get();
-            return response()->json(['success' => true, 'message' => "Inventory stock get successfully", 'data' => $stocks], 200);
-        } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
-        }
+        //     $stocks = inv_stock::with([
+        //         'item:inv_items_id,inv_items_id,inv_items_name,inv_items_stock,inv_item_cats_id',
+        //         'item.category:inv_item_cats_id,inv_item_cats_name'
+        //     ])->where('branch_id', $user->user_branch)->where('inv_stocks_status', 1)->get();
+        //     return response()->json(['success' => true, 'message' => "Inventory stock get successfully", 'data' => $stocks], 200);
+        // } catch (\Exception $e) {
+        //     return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        // }
+        
+    // }
+
+    public function getStock()
+{
+    try {
+        $user = Auth::user();
+
+        // Fetch stock details
+        $stocks = inv_stock::with([
+            'item:inv_items_id,inv_items_name,inv_items_stock,inv_item_cats_id',
+            'item.category:inv_item_cats_id,inv_item_cats_name'
+        ])
+            ->where('branch_id', $user->user_branch)
+            ->where('inv_stocks_status', 1)
+            ->get();
+
+        // Calculate total stock_in, stock_out, and stock_waste
+        $totals = inv_stock::where('branch_id', $user->user_branch)
+            ->where('inv_stocks_status', 1)
+            ->selectRaw("
+                SUM(CASE WHEN inv_stocks_type = 'stock_in' THEN inv_stock_qty ELSE 0 END) as total_stock_in,
+                SUM(CASE WHEN inv_stocks_type = 'stock_out' THEN inv_stock_qty ELSE 0 END) as total_stock_out,
+                SUM(CASE WHEN inv_stocks_type = 'stock_waste' THEN inv_stock_qty ELSE 0 END) as total_stock_waste
+            ")
+            ->first();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Inventory stock retrieved successfully",
+            'data' => [
+                'stocks' => $stocks,
+                'totals' => [
+                    'total_stock_in' => $totals->total_stock_in ?? 0,
+                    'total_stock_out' => $totals->total_stock_out ?? 0,
+                    'total_stock_waste' => $totals->total_stock_waste ?? 0,
+                ]
+            ]
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
     }
+}
+
 
     public function createStock(Request $request)
     {
