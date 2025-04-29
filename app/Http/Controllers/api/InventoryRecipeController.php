@@ -32,7 +32,7 @@ class InventoryRecipeController extends Controller
 
             $validatedData = $request->validate([
                 'product_id' => 'required|integer',
-                'ingredients' => 'required|json',
+                'ingredients' => 'required|array',
             ]);
 
             // Decode the ingredients JSON
