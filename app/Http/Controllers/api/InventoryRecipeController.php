@@ -35,8 +35,8 @@ class InventoryRecipeController extends Controller
                 'ingredients' => 'required|array',
             ]);
 
-            // Decode the ingredients JSON
-            $ingredients = json_decode($validatedData['ingredients'], true);
+            // Ingredients is already an array from validation
+            $ingredients = $validatedData['ingredients'];
 
             // Initialize total cost
             $totalCost = 0;
@@ -46,7 +46,6 @@ class InventoryRecipeController extends Controller
                 if (isset($ingredient['recipe_item_id']) && isset($ingredient['recipe_qty'])) {
                     $item = inv_items::where('inv_items_id', $ingredient['recipe_item_id'])->first();
                     if ($item) {
-
                         // Calculate cost for this ingredient
                         $itemCost = $item->unit_purchase_price * $ingredient['recipe_qty'];
                         $totalCost += $itemCost;
@@ -60,10 +59,9 @@ class InventoryRecipeController extends Controller
                 'branch_id' => $user->user_branch,
                 'company_id' => $user->company_id,
                 'product_id' => $validatedData['product_id'],
-                'inv_recipe_ingredient' => $validatedData['ingredients'],
+                'inv_recipe_ingredient' => json_encode($validatedData['ingredients']), // Convert array to JSON string
                 'inv_recipe_cost' => $totalCost,
             ]);
-
 
             return response()->json(['message' => 'Recipe created successfully', 'data' => $recipe], 201);
         } catch (\Exception $e) {
