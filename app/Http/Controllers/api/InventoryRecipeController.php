@@ -18,8 +18,8 @@ class InventoryRecipeController extends Controller
             $user = Auth::user();
 
             $recipes = Recipe::with(['product'])->where("company_id", $user->company_id)->where('branch_id', $user->user_branch)->where("inv_recipe_status", 1)->get();
-        
-            
+
+
             return response()->json(['success' => true, 'message' => "Recipes get successfully", "recipes" => $recipes], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' =>  $e->getMessage()], 500);
@@ -69,6 +69,19 @@ class InventoryRecipeController extends Controller
             return response()->json(['message' => 'Recipe created successfully', 'data' => $recipe], 201);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function deleteRecipe($recipe_id)
+    {
+
+        try {
+            $recipe = Recipe::find($recipe_id);
+            $recipe->inv_recipe_status = 0;
+            $recipe->update();
+            return response()->json(['success' => true, 'message' => "Recipe delete successfully"], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 }
