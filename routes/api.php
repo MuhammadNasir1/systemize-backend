@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\api\ApiController;
 use App\Http\Controllers\api\InventoryCategoryController;
 use App\Http\Controllers\api\InventoryItemsController;
+use App\Http\Controllers\api\InventoryRecipeController;
 use App\Http\Controllers\api\InventoryStockController;
 use App\Http\Controllers\api\InventoryUnitController;
 use App\Http\Controllers\OrderController;
@@ -178,7 +179,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     
     // recipe apis
-    Route::controller(InventoryStockController::class)->group(function () {
+    Route::controller(InventoryRecipeController::class)->group(function () {
         Route::post('/addInventoryRecipe', 'createRecipe');
         Route::get('/getInventoryRecipes', 'getRecipes');
         // Route::delete('/deleteInventoryStock/{stock_id}', 'deleteStock');

@@ -27,6 +27,7 @@ class InventoryRecipeController extends Controller
     {
 
         try {
+
             $user = Auth::user();
 
             $validatedData = $request->validate([
@@ -34,26 +35,33 @@ class InventoryRecipeController extends Controller
                 'ingredients' => 'required|json',
             ]);
 
+            // Decode the ingredients JSON
             $ingredients = json_decode($validatedData['ingredients'], true);
 
+            // Initialize total cost
+            $totalCost = 0;
+
+            // Loop through each ingredient to update stock and calculate cost
             foreach ($ingredients as $ingredient) {
                 if (isset($ingredient['recipe_item_id']) && isset($ingredient['recipe_qty'])) {
                     $item = inv_items::where('inv_items_id', $ingredient['recipe_item_id'])->first();
                     if ($item) {
-                        $item->inv_items_stock -= $ingredient['recipe_qty'];
-                        $item->update();
+
+                        // Calculate cost for this ingredient
+                        $itemCost = $item->unit_purchase_price * $ingredient['recipe_qty'];
+                        $totalCost += $itemCost;
                     }
                 }
             }
 
-            // Create a new recipe
+            // Create a new recipe with calculated cost
             $recipe = Recipe::create([
                 'user_id' => $user->id,
                 'branch_id' => $user->user_branch,
                 'company_id' => $user->company_id,
                 'product_id' => $validatedData['product_id'],
-                'inv_recipe_ingredient' => $validatedData['ingredients'], // Use validated JSON directly
-                'inv_recipe_cost' => 0,
+                'inv_recipe_ingredient' => $validatedData['ingredients'],
+                'inv_recipe_cost' => $totalCost,
             ]);
 
 
