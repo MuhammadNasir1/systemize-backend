@@ -176,6 +176,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/deleteInventoryStock/{stock_id}', 'deleteStock');
         Route::put('/updateInventoryStock/{stock_id}', 'updateStock');
     });
+    
+    // recipe apis
+    Route::controller(InventoryStockController::class)->group(function () {
+        Route::post('/addInventoryRecipe', 'createRecipe');
+        Route::get('/getInventoryRecipes', 'getRecipes');
+        // Route::delete('/deleteInventoryStock/{stock_id}', 'deleteStock');
+        // Route::put('/updateInventoryStock/{stock_id}', 'updateStock');
+    });
+
+
 });
 
 Route::middleware('auth:sanctum')->post('/logout', [ApiController::class, 'logout']);

@@ -19,6 +19,8 @@ return new class extends Migration
             $table->integer("user_id");
             $table->string("inv_unit_name");
             $table->string("inv_unit_symbol");
+            $table->string("inv_unit_symbol");
+            $table->integer("inv_unit_status")->default(1);
             $table->timestamps();
         });
     }
