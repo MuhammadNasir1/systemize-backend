@@ -76,7 +76,7 @@ class InventoryRecipeController extends Controller
 
         try {
             $recipe = Recipe::find($recipe_id);
-            if ($recipe) {
+            if (!$recipe) {
                 return response()->json(['success' => false, 'message' => 'Recipe not found'], 404);
             }
             $recipe->inv_recipe_status = 0;
@@ -97,8 +97,10 @@ class InventoryRecipeController extends Controller
                 'ingredients' => 'required|array',
             ]);
 
-            $recipe = Recipe::findOrFail($recipe_id);
-
+            $recipe = Recipe::find($recipe_id);
+            if (!$recipe) {
+                return response()->json(['success' => false, 'message' => 'Recipe not found'], 404);
+            }
             // Recalculate total cost
             $totalCost = 0;
             foreach ($validatedData['ingredients'] as $ingredient) {
