@@ -183,7 +183,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/addInventoryRecipe', 'createRecipe');
         Route::get('/getInventoryRecipes', 'getRecipes');
         Route::delete('/deleteInventoryRecipe/{recipe_id}', 'deleteRecipe');
-        // Route::put('/updateInventoryStock/{stock_id}', 'updateStock');
+        Route::put('/updateInventoryRecipe/{recipe_id}', 'updateRecipe');
     });
 
 

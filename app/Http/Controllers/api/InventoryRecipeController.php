@@ -41,7 +41,6 @@ class InventoryRecipeController extends Controller
             // Ingredients is already an array from validation
             $ingredients = $validatedData['ingredients'];
 
-            // Initialize total cost
             $totalCost = 0;
 
             // Loop through each ingredient to update stock and calculate cost
@@ -77,11 +76,49 @@ class InventoryRecipeController extends Controller
 
         try {
             $recipe = Recipe::find($recipe_id);
+            if ($recipe) {
+                return response()->json(['success' => false, 'message' => 'Recipe not found'], 404);
+            }
             $recipe->inv_recipe_status = 0;
             $recipe->update();
             return response()->json(['success' => true, 'message' => "Recipe delete successfully"], 200);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function updateRecipe(Request $request, $recipe_id)
+    {
+
+        try {
+            $user = Auth::user();
+            $validatedData = $request->validate([
+                'product_id' => 'required|integer',
+                'ingredients' => 'required|array',
+            ]);
+
+            $recipe = Recipe::findOrFail($recipe_id);
+
+            // Recalculate total cost
+            $totalCost = 0;
+            foreach ($validatedData['ingredients'] as $ingredient) {
+                if (isset($ingredient['recipe_item_id']) && isset($ingredient['recipe_qty'])) {
+                    $item = inv_items::where('inv_items_id', $ingredient['recipe_item_id'])->first();
+                    if ($item) {
+                        $itemCost = $item->unit_purchase_price * $ingredient['recipe_qty'];
+                        $totalCost += $itemCost;
+                    }
+                }
+            }
+            $recipe->update([
+                'product_id' => $validatedData['product_id'],
+                'inv_recipe_ingredient' => $validatedData['ingredients'],
+                'inv_recipe_cost' => $totalCost,
+            ]);
+
+            return response()->json(['success' => true, 'message' => 'Recipe updated successfully', 'data' => $recipe], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' =>  $e->getMessage()], 500);
         }
     }
 }
