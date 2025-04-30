@@ -26,6 +26,8 @@ class Recipe extends Model
     protected $casts = [
         'inv_recipe_ingredient' => 'array',
     ];
+    
+
 
     public function product()
     {

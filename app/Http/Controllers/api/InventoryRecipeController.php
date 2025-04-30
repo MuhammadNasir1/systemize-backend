@@ -62,7 +62,7 @@ class InventoryRecipeController extends Controller
                 'branch_id' => $user->user_branch,
                 'company_id' => $user->company_id,
                 'product_id' => $validatedData['product_id'],
-                'inv_recipe_ingredient' => json_encode($validatedData['ingredients']), // Convert array to JSON string
+                'inv_recipe_ingredient' => $validatedData['ingredients'], // Convert array to JSON string
                 'inv_recipe_cost' => $totalCost,
             ]);
 
