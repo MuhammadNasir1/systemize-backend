@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api;
 use App\Http\Controllers\Controller;
 use App\Models\inv_items;
 use App\Models\inv_stock;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -21,10 +22,8 @@ class InventoryReportController extends Controller
                 "report_item" => "nullable|integer",
                 "report_type" => "nullable|in:stock_in,stock_out,stock_waste,all",
             ]);
-
-            $from_date = $validatedData["from_date"] ?? null;
-            $to_date = $validatedData["to_date"] ?? null;
-
+            $from_date = $validatedData["from_date"] ?? Carbon::today()->toDateString();
+            $to_date = $validatedData["to_date"] ?? Carbon::today()->toDateString();
             $query = inv_stock::query();
 
             if ($from_date) {
