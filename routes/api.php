@@ -6,6 +6,7 @@ use App\Http\Controllers\api\ApiController;
 use App\Http\Controllers\api\InventoryCategoryController;
 use App\Http\Controllers\api\InventoryItemsController;
 use App\Http\Controllers\api\InventoryRecipeController;
+use App\Http\Controllers\api\InventoryReportController;
 use App\Http\Controllers\api\InventoryStockController;
 use App\Http\Controllers\api\InventoryUnitController;
 use App\Http\Controllers\OrderController;
@@ -184,6 +185,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/getInventoryRecipes', 'getRecipes');
         Route::delete('/deleteInventoryRecipe/{recipe_id}', 'deleteRecipe');
         Route::put('/updateInventoryRecipe/{recipe_id}', 'updateRecipe');
+    });
+    Route::controller(InventoryReportController::class)->group(function () {
+        Route::get('/getInventoryReport', 'getReport');
+
     });
 
 
