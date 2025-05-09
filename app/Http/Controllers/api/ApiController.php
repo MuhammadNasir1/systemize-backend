@@ -58,8 +58,8 @@ class ApiController extends Controller
             $userIds = $request->query('userIds'); // Can be single ID or comma-separated IDs
 
             // Start building the query
-            $query = StaffAttendance::with('company', 'branch', 'user')
-                ->where('company_id', $user->company_id)
+            // $query = StaffAttendance::with('company', 'branch', 'user')
+            $query = StaffAttendance::where('company_id', $user->company_id)
                 ->where('branch_id', $user->user_branch);
 
             // Apply date range filter if fromDate and toDate are provided
@@ -94,25 +94,54 @@ class ApiController extends Controller
             $attendance = $query->get();
 
             // Decode attendance_details and filter by userIds if provided
-            $attendance->transform(function ($item) use ($userIds) {
-                $item->attendance_details = json_decode($item->attendance_details, true);
+            // $attendance->transform(function ($item) use ($userIds) {
+            //     $item->attendance_details = json_decode($item->attendance_details, true);
 
-                // If userIds is provided, filter the attendance_details
+            //     // If userIds is provided, filter the attendance_details
+            //     if ($userIds) {
+            //         $targetUserIds = is_array($userIds) ? $userIds : explode(',', $userIds);
+            //         // Convert to integers for comparison
+            //         $targetUserIds = array_map('intval', $targetUserIds);
+
+            //         $item->attendance_details = array_filter($item->attendance_details, function ($detail) use ($targetUserIds) {
+            //             return in_array((int)$detail['user_id'], $targetUserIds);
+            //         });
+
+            //         // Re-index the array after filtering
+            //         $item->attendance_details = array_values($item->attendance_details);
+            //     }
+
+            //     return $item;
+            // });
+            $attendance->transform(function ($item) use ($userIds) {
+                $details = json_decode($item->attendance_details, true);
+            
+                // Filter user IDs if requested
                 if ($userIds) {
                     $targetUserIds = is_array($userIds) ? $userIds : explode(',', $userIds);
-                    // Convert to integers for comparison
                     $targetUserIds = array_map('intval', $targetUserIds);
-
-                    $item->attendance_details = array_filter($item->attendance_details, function ($detail) use ($targetUserIds) {
+            
+                    $details = array_filter($details, function ($detail) use ($targetUserIds) {
                         return in_array((int)$detail['user_id'], $targetUserIds);
                     });
-
-                    // Re-index the array after filtering
-                    $item->attendance_details = array_values($item->attendance_details);
                 }
-
+            
+                // Fetch user details in bulk
+                $userIdsInDetails = array_column($details, 'user_id');
+                $users = User::Select([ 'id' , 'name' , 'email' , 'phone' , 'user_role' , 'user_status'] )->whereIn('id', $userIdsInDetails)->get()->keyBy('id');
+            
+                // Merge user info into attendance details
+                $item->attendance_details = array_map(function ($detail) use ($users) {
+                    return [
+                        'user_id' => $detail['user_id'],
+                        'start_time' => $detail['start_time'],
+                        'end_time' => $detail['end_time'],
+                        'user' => $users[$detail['user_id']] ?? null
+                    ];
+                }, $details);
+            
                 return $item;
-            });
+            });      
 
             // Filter out records with empty attendance_details if userIds was provided
             if ($userIds) {
@@ -129,28 +158,94 @@ class ApiController extends Controller
     // get attendance
 
     // add attendance
+    // public function addAttendance(Request $request)
+    // {
+    //     try {
+    //         $user = Auth::user();
+
+    //         $validatedData = $request->validate([
+    //             'attendance_date' => 'required|date',
+    //             'attendance_details' => 'required|array',
+    //             'attendance_details.*.user_id' => 'required|exists:users,id',
+    //             'attendance_details.*.start_time' => 'required|date_format:H:i',
+    //             'attendance_details.*.end_time' => 'required|date_format:H:i|after:attendance_details.*.start_time',
+    //         ]);
+
+    //         // Prepare the attendance details array
+    //         $attendanceDetails = array_map(function ($detail) {
+    //             return [
+    //                 'user_id' => $detail['user_id'],
+    //                 'start_time' => $detail['start_time'],
+    //                 'end_time' => $detail['end_time']
+    //             ];
+    //         }, $validatedData['attendance_details']);
+
+    //         $attendance = StaffAttendance::create([
+    //             'company_id' => $user->company_id,
+    //             'branch_id' => $user->user_branch,
+    //             'added_user_id' => $user->id,
+    //             'attendance_date' => $validatedData['attendance_date'],
+    //             'attendance_details' => json_encode($attendanceDetails),
+    //         ]);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Attendance added successfully!',
+    //             'attendance' => $attendance
+    //         ], 200);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => $e->getMessage()
+    //         ], 400);
+    //     }
+    // }
     public function addAttendance(Request $request)
-    {
-        try {
-            $user = Auth::user();
+{
+    try {
+        $user = Auth::user();
 
-            $validatedData = $request->validate([
-                'attendance_date' => 'required|date',
-                'attendance_details' => 'required|array',
-                'attendance_details.*.user_id' => 'required|exists:users,id',
-                'attendance_details.*.start_time' => 'required|date_format:H:i',
-                'attendance_details.*.end_time' => 'required|date_format:H:i|after:attendance_details.*.start_time',
-            ]);
+        $validatedData = $request->validate([
+            'attendance_date' => 'required|date',
+            'attendance_details' => 'required|array',
+            'attendance_details.*.user_id' => 'required|exists:users,id',
+            'attendance_details.*.start_time' => 'required|date_format:H:i',
+            'attendance_details.*.end_time' => 'required|date_format:H:i|after:attendance_details.*.start_time',
+        ]);
 
-            // Prepare the attendance details array
-            $attendanceDetails = array_map(function ($detail) {
-                return [
-                    'user_id' => $detail['user_id'],
-                    'start_time' => $detail['start_time'],
-                    'end_time' => $detail['end_time']
-                ];
-            }, $validatedData['attendance_details']);
+        // Prepare the attendance details array
+        $attendanceDetails = array_map(function ($detail) {
+            return [
+                'user_id' => $detail['user_id'],
+                'start_time' => $detail['start_time'],
+                'end_time' => $detail['end_time']
+            ];
+        }, $validatedData['attendance_details']);
 
+        // Check if a record already exists for the same date, branch, and company
+        $existingAttendance = StaffAttendance::where('attendance_date', $validatedData['attendance_date'])
+            ->where('company_id', $user->company_id)
+            ->where('branch_id', $user->user_branch)
+            ->first();
+
+        if ($existingAttendance) {
+            // Merge new attendance details with existing ones
+            $existingDetails = json_decode($existingAttendance->attendance_details, true) ?? [];
+
+            // Remove any existing entries for the same user_ids to avoid duplicates
+            $newUserIds = array_column($attendanceDetails, 'user_id');
+            $filteredExistingDetails = array_filter($existingDetails, function ($detail) use ($newUserIds) {
+                return !in_array($detail['user_id'], $newUserIds);
+            });
+
+            $mergedDetails = array_merge($filteredExistingDetails, $attendanceDetails);
+
+            $existingAttendance->attendance_details = json_encode($mergedDetails);
+            $existingAttendance->save();
+
+            $attendance = $existingAttendance;
+        } else {
+            // Create a new attendance record
             $attendance = StaffAttendance::create([
                 'company_id' => $user->company_id,
                 'branch_id' => $user->user_branch,
@@ -158,19 +253,21 @@ class ApiController extends Controller
                 'attendance_date' => $validatedData['attendance_date'],
                 'attendance_details' => json_encode($attendanceDetails),
             ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Attendance added successfully!',
-                'attendance' => $attendance
-            ], 200);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 400);
         }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance saved successfully!',
+            'attendance' => $attendance
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 400);
     }
+}
+
     // add attendance
     //----------------------------------------------------Attendance APIs------------------------------------------------------//
 
